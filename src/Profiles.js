@@ -1,4 +1,6 @@
 import React, {Component} from 'react';
+import { connect } from 'react-redux';
+
 import Grid from '@material-ui/core/Grid';
 // import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
@@ -31,9 +33,17 @@ class Profile extends Component {
             open: false
             
         }
-        console.log(this.state.profile[0].name);
+        // console.log(this.state.profile[0].name);
         
     }
+    // static getDerivedStateFromProps (nextProps, prevState){
+    //     if(prevState.profile[0].name !== nextProps.user.name){
+    //         return {profile:[{...nextProps.user}]}
+    //     }
+    //     console.log(nextProps);
+        
+        
+    // }
     handleClose = () => {
         let modalClose = this.state.open;
         this.setState({open:!modalClose});
@@ -45,7 +55,7 @@ class Profile extends Component {
     }
 
     delete = () => {
-        console.log(this.props.user);
+        // console.log(this.props.user); 
         
         this.props.delete(this.props.user.id);
     }
@@ -246,31 +256,34 @@ class Profiles extends Component {
             return results.json();
         }).then(data => {
             let x = [...data];
-            this.setState({profiles: x});
+            // this.setState({profiles: x});
+            this.props.dispatch({type:'STOREPROFILE',data:x});
             let imageUrl = [];
             imageUrl = x.map((profPic) => {
-                console.log(profPic);
+                // console.log(profPic);
                 let url = 'https://avatars.dicebear.com/v2/avataaars/{{'+profPic.username+'}}.svg?options[mood][]=happy';
                 
                 return url;
             });
             let likeStatus = [];
             likeStatus = x.map((profPic)=>{return false});
-            this.setState({images: imageUrl,liked:likeStatus});
+            // this.setState({images: imageUrl,liked:likeStatus});
+            this.props.dispatch({type:'STOREIMAGE' , imageData : imageUrl, likeData: likeStatus})
         });
 
         
     }
     handleLike = (id) => {
-        let Profile = [...this.state.profiles];
-        let likeStatus = [...this.state.liked];
+        let Profile = [...this.props.profiles];
+        let likeStatus = [...this.props.liked];
         let index  = Profile.findIndex((e) => {
             return e.id === id
         });
         likeStatus.splice(index,1,!likeStatus[index]);
 
         // console.log(likeStatus);
-        this.setState({liked:likeStatus});
+        // this.setState({liked:likeStatus});
+        this.props.dispatch({type:'HANDLELIKE', likeStat : likeStatus});
         
 
         
@@ -280,16 +293,17 @@ class Profiles extends Component {
    
    
     handleDelete = (id) => {
-        let Profile = [...this.state.profiles];
-        let liked = [...this.state.liked];
-        let imageUrl = [...this.state.images];
+        let Profile = [...this.props.profiles];
+        let liked = [...this.props.liked];
+        let imageUrl = [...this.props.images];
         let index = Profile.findIndex((e)=>{
             return e.id === id;
         });
         Profile.splice(index,1);
         liked.splice(index,1);
         imageUrl.splice(index,1);
-        this.setState({profiles:Profile,images:imageUrl,liked:liked});
+        // this.setState({profiles:Profile,images:imageUrl,liked:liked});
+        this.props.dispatch({type:'DELETE', profile:Profile, image:imageUrl, likeStat:liked})
     }
     handleUpdate = (profile) => {
         
@@ -298,7 +312,7 @@ class Profiles extends Component {
 
 
         
-         let profileDetails = [...this.state.profiles];
+         let profileDetails = [...this.props.profiles];
         // console.log(profileDetails);
         
          let index = profileDetails.findIndex((profileDetail)=>{
@@ -306,7 +320,8 @@ class Profiles extends Component {
             return profileDetail.id === profile.id;
         })
         profileDetails.splice(index,1,profile);
-        this.setState({profiles:profileDetails});
+        // this.setState({profiles:profileDetails});
+        this.props.dispatch({type:'UPDATE', profile:profileDetails});
         
     }
     
@@ -318,10 +333,10 @@ class Profiles extends Component {
         return (
             <Grid container spacing= {3} justify="flex-start" alignItems="center" > 
                     {
-                    this.state.profiles.map((profile,index) => {
+                    this.props.profiles.map((profile,index) => {
                         return (
                                     
-                            <Profile key={profile.id} user = {profile} imageUrl = {this.state.images[index]} likeStatus ={this.state.liked[index]} update={this.handleUpdate} delete={this.handleDelete} like = {this.handleLike}
+                            <Profile key={profile.id} user = {profile} imageUrl = {this.props.images[index]} likeStatus ={this.props.liked[index]} update={this.handleUpdate} delete={this.handleDelete} like = {this.handleLike}
                                 
                             />
                                     
@@ -340,5 +355,11 @@ class Profiles extends Component {
         );
     }
 }
-
-export default Profiles;
+const mapStateToProps = state => {
+    return {
+        profiles : state.profiles,
+        images : state.images,
+        liked : state.liked
+    }
+}
+export default connect(mapStateToProps)(Profiles);
